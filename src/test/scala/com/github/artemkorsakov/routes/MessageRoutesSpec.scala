@@ -63,7 +63,9 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}]}}""")
+        entityAs[String] should ===(
+          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}]}}"""
+        )
       }
 
       val message3            = Message("my_key3", "my_value3")
@@ -80,7 +82,9 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}]}}""")
+        entityAs[String] should ===(
+          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}]}}"""
+        )
       }
 
       val message4            = Message("my_key4", "my_value4")
@@ -97,10 +101,24 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}],"my_topic3":[{"key":"my_key4","value":"my_value4"}]}}""")
+        entityAs[String] should ===(
+          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}],"my_topic3":[{"key":"my_key4","value":"my_value4"}]}}"""
+        )
       }
     }
 
+    "impossible to send a message if the topic is not specified (POST /kafka/send)" in {
+      val message            = Message("my_key1", "my_value1")
+      val messageEntity      = Marshal(message).to[MessageEntity].futureValue
+      val requestPostMessage = Post("/kafka/send/").withEntity(messageEntity)
+      requestPostMessage ~> routes ~> runRoute
+      val request = HttpRequest(uri = "/kafka")
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        contentType should ===(ContentTypes.`application/json`)
+        entityAs[String] should ===("""{"messages":{}}""")
+      }
+    }
   }
 
 }

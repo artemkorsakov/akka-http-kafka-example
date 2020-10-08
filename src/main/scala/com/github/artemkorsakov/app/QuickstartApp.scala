@@ -28,7 +28,8 @@ object QuickstartApp {
   }
   def main(args: Array[String]): Unit = {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
-      val messageRegistryActor = context.spawn(MessageRegistry(), "MessageRegistryActor")
+      val bootstrapServer      = context.system.settings.config.getString("my-app.bootstrap-server")
+      val messageRegistryActor = context.spawn(MessageRegistry(bootstrapServer), "MessageRegistryActor")
       context.watch(messageRegistryActor)
 
       val routes = new MessageRoutes(messageRegistryActor)(context.system)

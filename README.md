@@ -11,9 +11,16 @@ bin/kafka-topics.sh --create --topic kafka-example --bootstrap-server localhost:
 ```
 
 ### start local server
-Run commands in project folder:
+Run commands in project folder (*nix):
 ``` sh
 ./sbt
+```
+or for Windows
+``` sh
+sbt.bat
+```
+After that in sbt terminal
+``` sh
 reStart
 ```
 After that you will show something like this:
@@ -23,9 +30,14 @@ After that you will show something like this:
 Local server start on http://127.0.0.1:8080/
 
 ### Send a message to "kafka-example" topic
-Send a message with key = **_my_key_** and value = _**my_value**_ to _**my_topic**_ topic:
+Send a message with key = **_my_key_** and value = _**my_value**_ to _**kafka-example**_ topic:
 ```
-curl -H "Content-type: application/json" -X POST -d '{"key": "my_key", "value": "my_value"}' http://localhost:8080/kafka/send/my_topic
+curl -H "Content-type: application/json" -X POST -d '{"key": "my_key", "value": "my_value"}' http://localhost:8080/kafka/send/kafka-example
 ```
 
+### Frameworks documentation
+- [Apache Kafka]
+- [Akka HTTP]
+
 [Apache Kafka]: https://kafka.apache.org/documentation/#quickstart
+[Akka HTTP]: https://developer.lightbend.com/guides/akka-http-quickstart-scala/index.html

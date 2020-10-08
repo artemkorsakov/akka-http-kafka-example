@@ -37,9 +37,11 @@ class MessageRoutes(messageRegistry: ActorRef[MessageRegistry.Command])(implicit
           path(Segment) { topic =>
             concat(
               post {
-                entity(as[Message]) { message =>
-                  onSuccess(createMessage(topic, message)) { performed =>
-                    complete((StatusCodes.Created, performed))
+                rejectEmptyResponse {
+                  entity(as[Message]) { message =>
+                    onSuccess(createMessage(topic, message)) { performed =>
+                      complete((StatusCodes.Created, performed))
+                    }
                   }
                 }
               }
