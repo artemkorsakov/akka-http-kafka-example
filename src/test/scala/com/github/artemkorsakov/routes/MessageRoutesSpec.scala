@@ -6,7 +6,7 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.github.artemkorsakov.kafka.msg.{ Message, MessageRegistry }
+import com.github.artemkorsakov.kafka.msg.{ Message, MessageRegistry, Messages }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{ Matchers, WordSpec }
 
@@ -108,7 +108,7 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
     }
 
     "impossible to send a message if the topic is not specified (POST /kafka/send)" in {
-      val message            = Message("my_key1", "my_value1")
+      val message            = Message("my_key_error", "my_value_error")
       val messageEntity      = Marshal(message).to[MessageEntity].futureValue
       val requestPostMessage = Post("/kafka/send/").withEntity(messageEntity)
       requestPostMessage ~> routes ~> runRoute
@@ -116,7 +116,9 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{}}""")
+        val mess = entityAs[Messages].messages.values
+        println(mess)
+        mess.forall(seq => !seq.contains(message)) shouldBe true
       }
     }
   }
