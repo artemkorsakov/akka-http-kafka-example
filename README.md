@@ -30,9 +30,9 @@ After that you will show something like this:
 Local server start on http://127.0.0.1:8080/
 
 ### Send a message to "kafka-example" topic
-Send a message with key = **_my_key_** and value = _**my_value**_ to _**kafka-example**_ topic:
+Send a message with key = **_my_key_**, value = _**my_value**_ and topic = _**kafka-example**_ to _**localhost:9092**_:
 ```
-curl -H "Content-type: application/json" -X POST -d '{"key": "my_key", "value": "my_value"}' http://localhost:8080/kafka/send/kafka-example
+curl -H "Content-type: application/json" -X POST -d '{"server": "localhost:9092", "topic": "kafka-example", "key": "my_key0", "value": "my_value0"}' http://localhost:8080/kafka/send
 ```
 
 ### Frameworks documentation

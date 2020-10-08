@@ -27,98 +27,75 @@ class MessageRoutesSpec extends WordSpec with Matchers with ScalaFutures with Sc
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{}}""")
+        entityAs[String] should ===("""{"messages":[]}""")
       }
     }
 
     "be able to send a message (POST /kafka/send)" in {
-      val message1            = Message("my_key1", "my_value1")
+      val message1            = Message(None, "my_topic1", "my_key1", "my_value1")
       val messageEntity1      = Marshal(message1).to[MessageEntity].futureValue
-      val requestPostMessage1 = Post("/kafka/send/my_topic1").withEntity(messageEntity1)
+      val requestPostMessage1 = Post("/kafka/send").withEntity(messageEntity1)
       requestPostMessage1 ~> routes ~> check {
         status should ===(StatusCodes.Created)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"description":"Message (key=my_key1, value=my_value1) sent to topic my_topic1."}"""
-        )
+        entityAs[String] should ===("""{"description":"Message (Message(None,my_topic1,my_key1,my_value1)) sent."}""")
       }
       var requestGetMessages = HttpRequest(uri = "/kafka")
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===("""{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"}]}}""")
+        entityAs[Messages].messages.contains(message1) shouldBe true
       }
 
-      val message2            = Message("my_key2", "my_value2")
+      val message2            = Message(None, "my_topic1", "my_key2", "my_value2")
       val messageEntity2      = Marshal(message2).to[MessageEntity].futureValue
-      val requestPostMessage2 = Post("/kafka/send/my_topic1").withEntity(messageEntity2)
+      val requestPostMessage2 = Post("/kafka/send").withEntity(messageEntity2)
       requestPostMessage2 ~> routes ~> check {
         status should ===(StatusCodes.Created)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"description":"Message (key=my_key2, value=my_value2) sent to topic my_topic1."}"""
-        )
+        entityAs[String] should ===("""{"description":"Message (Message(None,my_topic1,my_key2,my_value2)) sent."}""")
       }
       requestGetMessages = HttpRequest(uri = "/kafka")
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}]}}"""
-        )
+        entityAs[Messages].messages.contains(message1) shouldBe true
+        entityAs[Messages].messages.contains(message2) shouldBe true
       }
 
-      val message3            = Message("my_key3", "my_value3")
+      val message3            = Message(None, "my_topic2", "my_key3", "my_value3")
       val messageEntity3      = Marshal(message3).to[MessageEntity].futureValue
-      val requestPostMessage3 = Post("/kafka/send/my_topic2").withEntity(messageEntity3)
+      val requestPostMessage3 = Post("/kafka/send").withEntity(messageEntity3)
       requestPostMessage3 ~> routes ~> check {
         status should ===(StatusCodes.Created)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"description":"Message (key=my_key3, value=my_value3) sent to topic my_topic2."}"""
-        )
+        entityAs[String] should ===("""{"description":"Message (Message(None,my_topic2,my_key3,my_value3)) sent."}""")
       }
       requestGetMessages = HttpRequest(uri = "/kafka")
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}]}}"""
-        )
+        entityAs[Messages].messages.contains(message1) shouldBe true
+        entityAs[Messages].messages.contains(message2) shouldBe true
+        entityAs[Messages].messages.contains(message3) shouldBe true
       }
 
-      val message4            = Message("my_key4", "my_value4")
+      val message4            = Message(None, "my_topic3", "my_key4", "my_value4")
       val messageEntity4      = Marshal(message4).to[MessageEntity].futureValue
-      val requestPostMessage4 = Post("/kafka/send/my_topic3").withEntity(messageEntity4)
+      val requestPostMessage4 = Post("/kafka/send").withEntity(messageEntity4)
       requestPostMessage4 ~> routes ~> check {
         status should ===(StatusCodes.Created)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"description":"Message (key=my_key4, value=my_value4) sent to topic my_topic3."}"""
-        )
+        entityAs[String] should ===("""{"description":"Message (Message(None,my_topic3,my_key4,my_value4)) sent."}""")
       }
       requestGetMessages = HttpRequest(uri = "/kafka")
       requestGetMessages ~> routes ~> check {
         status should ===(StatusCodes.OK)
         contentType should ===(ContentTypes.`application/json`)
-        entityAs[String] should ===(
-          """{"messages":{"my_topic1":[{"key":"my_key1","value":"my_value1"},{"key":"my_key2","value":"my_value2"}],"my_topic2":[{"key":"my_key3","value":"my_value3"}],"my_topic3":[{"key":"my_key4","value":"my_value4"}]}}"""
-        )
-      }
-    }
-
-    "impossible to send a message if the topic is not specified (POST /kafka/send)" in {
-      val message            = Message("my_key_error", "my_value_error")
-      val messageEntity      = Marshal(message).to[MessageEntity].futureValue
-      val requestPostMessage = Post("/kafka/send/").withEntity(messageEntity)
-      requestPostMessage ~> routes ~> runRoute
-      val request = HttpRequest(uri = "/kafka")
-      request ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        contentType should ===(ContentTypes.`application/json`)
-        val mess = entityAs[Messages].messages.values
-        println(mess)
-        mess.forall(seq => !seq.contains(message)) shouldBe true
+        entityAs[Messages].messages.contains(message1) shouldBe true
+        entityAs[Messages].messages.contains(message2) shouldBe true
+        entityAs[Messages].messages.contains(message3) shouldBe true
+        entityAs[Messages].messages.contains(message4) shouldBe true
       }
     }
   }

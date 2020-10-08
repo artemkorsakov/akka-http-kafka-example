@@ -8,7 +8,7 @@ object JsonFormats {
 
   import DefaultJsonProtocol._
 
-  implicit val messageJsonFormat: RootJsonFormat[Message]   = jsonFormat2(Message)
+  implicit val messageJsonFormat: RootJsonFormat[Message]   = jsonFormat4(Message)
   implicit val messagesJsonFormat: RootJsonFormat[Messages] = jsonFormat1(Messages)
 
   implicit val actionPerformedJsonFormat: RootJsonFormat[ActionPerformed] = jsonFormat1(ActionPerformed)

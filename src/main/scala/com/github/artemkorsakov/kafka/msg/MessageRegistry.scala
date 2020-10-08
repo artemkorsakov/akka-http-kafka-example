@@ -7,40 +7,33 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 import scala.collection.immutable
 
-final case class Message(key: String, value: String)
-final case class Messages(messages: immutable.Map[String, immutable.Seq[Message]])
+final case class Message(server: Option[String], topic: String, key: String, value: String)
+final case class Messages(messages: immutable.Seq[Message])
 
 object MessageRegistry {
   sealed trait Command
-  final case class GetMessages(replyTo: ActorRef[Messages])                                           extends Command
-  final case class CreateMessage(topic: String, message: Message, replyTo: ActorRef[ActionPerformed]) extends Command
+  final case class GetMessages(replyTo: ActorRef[Messages])                            extends Command
+  final case class CreateMessage(message: Message, replyTo: ActorRef[ActionPerformed]) extends Command
 
   final case class ActionPerformed(description: String)
 
-  private var bootstrapServer: Option[String] = None
+  def apply(): Behavior[Command] = registry(Seq.empty)
 
-  def apply(): Behavior[Command] = apply("")
-  def apply(server: String): Behavior[Command] = {
-    bootstrapServer = Some(server)
-    registry(Map.empty)
-  }
-
-  private def registry(messages: Map[String, Seq[Message]]): Behavior[Command] =
+  private def registry(messages: Seq[Message]): Behavior[Command] =
     Behaviors.receiveMessage {
       case GetMessages(replyTo) =>
         replyTo ! Messages(messages)
         Behaviors.same
-      case CreateMessage(topic, message, replyTo) =>
-        replyTo ! ActionPerformed(s"Message (key=${message.key}, value=${message.value}) sent to topic $topic.")
-        sendToKafka(topic, message)
-        val seq = messages.getOrElse(topic, Seq.empty) :+ message
-        registry(messages + (topic -> seq))
+      case CreateMessage(message, replyTo) =>
+        replyTo ! ActionPerformed(s"Message ($message) sent.")
+        sendToKafka(message)
+        registry(messages :+ message)
     }
 
-  private def sendToKafka(topic: String, message: Message): Unit =
-    if (bootstrapServer.getOrElse("").trim.nonEmpty) {
-      val producer = createKafkaProducer(bootstrapServer.get)
-      val record   = new ProducerRecord(topic, message.key, message.value)
+  private def sendToKafka(message: Message): Unit =
+    if (message.server.isDefined && message.server.get.trim.nonEmpty) {
+      val producer = createKafkaProducer(message.server.get)
+      val record   = new ProducerRecord(message.topic, message.key, message.value)
       producer.send(record)
       producer.close()
     }

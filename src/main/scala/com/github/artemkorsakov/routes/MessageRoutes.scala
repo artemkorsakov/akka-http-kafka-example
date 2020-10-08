@@ -20,8 +20,8 @@ class MessageRoutes(messageRegistry: ActorRef[MessageRegistry.Command])(implicit
 
   def getMessages: Future[Messages] =
     messageRegistry.ask(GetMessages)
-  def createMessage(topic: String, message: Message): Future[ActionPerformed] =
-    messageRegistry.ask(CreateMessage(topic, message, _))
+  def createMessage(message: Message): Future[ActionPerformed] =
+    messageRegistry.ask(CreateMessage(message, _))
 
   val messageRoutes: Route =
     pathPrefix("kafka") {
@@ -34,14 +34,12 @@ class MessageRoutes(messageRegistry: ActorRef[MessageRegistry.Command])(implicit
           )
         },
         pathPrefix("send") {
-          path(Segment) { topic =>
+          pathEnd {
             concat(
               post {
-                rejectEmptyResponse {
-                  entity(as[Message]) { message =>
-                    onSuccess(createMessage(topic, message)) { performed =>
-                      complete((StatusCodes.Created, performed))
-                    }
+                entity(as[Message]) { message =>
+                  onSuccess(createMessage(message)) { performed =>
+                    complete((StatusCodes.Created, performed))
                   }
                 }
               }
