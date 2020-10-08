@@ -19,7 +19,7 @@ or for Windows
 ``` sh
 sbt.bat
 ```
-After that in sbt terminal
+After that in sbt terminal run server
 ``` sh
 reStart
 ```
